@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aggregate Density Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .calculator-card, .graph-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card-title {
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #3498db;
+            font-size: 1.5rem;
+        }
+
+        .input-section {
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .input-field {
+            margin-bottom: 1rem;
+        }
+
+        .input-field label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .input-field input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-field input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .det-inputs {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+
+        .det-input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: center;
+            border: 1px solid #bdc3c7;
+        }
+
+        th {
+            background: #34495e;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        tr:hover {
+            background: #e8f4fc;
+        }
+
+        .result-cell {
+            font-weight: 600;
+        }
+
+        .in-range {
+            color: #27ae60;
+        }
+
+        .out-of-range {
+            color: #e74c3c;
+        }
+
+        .graph-container {
+            width: 100%;
+            height: 400px;
+            margin-top: 1rem;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .instructions h3 {
+            color: #856404;
+            margin-bottom: 0.5rem;
+        }
+
+        .instructions ul {
+            list-style-position: inside;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Aggregate Density Calculator</h1>
+            <p>Calculate density and water absorption for aggregate materials</p>
+        </div>
+
+        <div class="main-content">
+            <div class="calculator-card">
+                <h2 class="card-title">Input Parameters</h2>
+                
+                <div class="instructions">
+                    <h3>How to Use:</h3>
+                    <ul>
+                        <li>Enter your mass values in the input fields</li>
+                        <li>Enter custom DET 2 values (or leave for random generation)</li>
+                        <li>Click "Calculate & Generate" to compute results</li>
+                        <li>View results in the table and graph below</li>
+                    </ul>
+                </div>
+
+                <div class="input-section">
+                    <h3>Mass Values</h3>
+                    <div class="input-group">
+                        <div class="input-field">
+                            <label for="A">Aggregate (Air Dried) [A] (g)</label>
+                            <input type="number" id="A" step="0.1" value="554.1">
+                        </div>
+                        <div class="input-field">
+                            <label for="B">Vessel + Water + Aggregate [B] (g)</label>
+                            <input type="number" id="B" step="0.1" value="2402.9">
+                        </div>
+                        <div class="input-field">
+                            <label for="C">Vessel + Water [C] (g)</label>
+                            <input type="number" id="C" step="0.1" value="2058.5">
+                        </div>
+                        <div class="input-field">
+                            <label for="D">Aggregate (Oven Dried) [D] (g)</label>
+                            <input type="number" id="D" step="0.1" value="541.6">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-section">
+                    <h3>Custom DET 2 Values (Optional)</h3>
+                    <div class="det-inputs">
+                        <div class="det-input-group">
+                            <div class="input-field">
+                                <label for="det2Oven">Oven Dried Basis</label>
+                                <input type="number" id="det2Oven" step="0.001" placeholder="Leave empty for random">
+                            </div>
+                            <div class="input-field">
+                                <label for="det2Saturated">Saturated & Surface Dry Basis</label>
+                                <input type="number" id="det2Saturated" step="0.001" placeholder="Leave empty for random">
+                            </div>
+                            <div class="input-field">
+                                <label for="det2Apparent">Apparent Density</label>
+                                <input type="number" id="det2Apparent" step="0.001" placeholder="Leave empty for random">
+                            </div>
+                            <div class="input-field">
+                                <label for="det2Water">Water Absorption %</label>
+                                <input type="number" id="det2Water" step="0.001" placeholder="Leave empty for random">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="calculateAndGenerate()">Calculate & Generate</button>
+                    <button class="btn btn-secondary" onclick="resetToDefaults()">Reset to Defaults</button>
+                </div>
+
+                <h2 class="card-title">Results Table</h2>
+                <div id="resultsTable"></div>
+            </div>
+
+            <div class="graph-card">
+                <h2 class="card-title">Results Visualization</h2>
+                <div class="graph-container">
+                    <canvas id="resultsChart"></canvas>
+                </div>
+                
+                <div style="margin-top: 2rem;">
+                    <h3>Interpretation Guide:</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li>✅ <span style="color: #27ae60;">Green</span>: Within acceptable range</li>
+                        <li>❌ <span style="color: #e74c3c;">Red</span>: Outside acceptable range</li>
+                        <li>DET 1: Your calculated values</li>
+                        <li>DET 2: Custom or randomly generated control values</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Aggregate Density Calculator &copy; 2024 | For laboratory testing purposes</p>
+        </div>
+    </div>
+
+    <!-- Include Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Default input values
+        const defaultInputs = {
+            A: 554.1,
+            B: 2402.9,
+            C: 2058.5,
+            D: 541.6
+        };
+
+        // Acceptable ranges for each calculation type - UPDATED Water Absorption range
+        const det2Limits = {
+            "Oven Dried Basis": [2.55, 2.75],
+            "Saturated & Surface Dry Basis": [2.55, 2.75],
+            "Apparent Density": [2.6, 2.9],
+            "Water Absorption %": [1.9, 2.3]  // CHANGED from [0.5, 2.0] to [1.9, 2.3]
+        };
+
+        let currentChart = null;
+
+        // Generate random number within range
+        function getRandomInRange(min, max, decimals = 3) {
+            return +(Math.random() * (max - min) + min).toFixed(decimals);
+        }
+
+        // Calculate DET 1 results
+        function calculateResults(inputs) {
+            const { A, B, C, D } = inputs;
+            
+            const ovenDriedBasis = D / (A - (B - C));
+            const satSurfaceDryBasis = A / (A - (B - C));
+            const apparentDensity = D / (D - (B - C));
+            const waterAbsorption = 100 * (A - D) / D;
+
+            return {
+                "Oven Dried Basis": ovenDriedBasis,
+                "Saturated & Surface Dry Basis": satSurfaceDryBasis,
+                "Apparent Density": apparentDensity,
+                "Water Absorption %": waterAbsorption
+            };
+        }
+
+        // Generate DET 2 results (custom or random)
+        function generateDet2Results() {
+            // Get custom DET 2 values from inputs
+            const customOven = document.getElementById('det2Oven').value;
+            const customSaturated = document.getElementById('det2Saturated').value;
+            const customApparent = document.getElementById('det2Apparent').value;
+            const customWater = document.getElementById('det2Water').value;
+
+            return {
+                "Oven Dried Basis": customOven ? parseFloat(customOven) : getRandomInRange(...det2Limits["Oven Dried Basis"]),
+                "Saturated & Surface Dry Basis": customSaturated ? parseFloat(customSaturated) : getRandomInRange(...det2Limits["Saturated & Surface Dry Basis"]),
+                "Apparent Density": customApparent ? parseFloat(customApparent) : getRandomInRange(...det2Limits["Apparent Density"]),
+                "Water Absorption %": customWater ? parseFloat(customWater) : getRandomInRange(...det2Limits["Water Absorption %"])
+            };
+        }
+
+        // Calculate mean of two values
+        function meanResult(val1, val2) {
+            if (isNaN(val1) || isNaN(val2)) return "";
+            return ((val1 + val2) / 2).toFixed(3);
+        }
+
+        // Check if value is within range
+        function isInRange(value, range) {
+            return value >= range[0] && value <= range[1];
+        }
+
+        // Main calculation function
+        function calculateAndGenerate() {
+            // Get current input values
+            const inputs = {
+                A: parseFloat(document.getElementById('A').value) || 0,
+                B: parseFloat(document.getElementById('B').value) || 0,
+                C: parseFloat(document.getElementById('C').value) || 0,
+                D: parseFloat(document.getElementById('D').value) || 0
+            };
+
+            // Calculate results
+            const det1 = calculateResults(inputs);
+            const det2 = generateDet2Results();
+
+            // Generate table HTML
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mass (g)</th>
+                            <th>Column 1</th>
+                            <th>DET 1</th>
+                            <th>DET 2</th>
+                            <th>Column 2</th>
+                            <th>Calculation</th>
+                            <th>DET 1 Result</th>
+                            <th>DET 2 Result</th>
+                            <th>Mean Result</th>
+                            <th>Accepted Range</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            // Table rows data
+            const rows = [
+                {
+                    mass: "Aggregate (Air Dried)",
+                    col1: "[A]",
+                    col2: "Oven Dried Basis",
+                    calculation: "D/A - (B – C)",
+                    key: "Oven Dried Basis"
+                },
+                {
+                    mass: "Vessel + Water + Aggregate",
+                    col1: "[B]",
+                    col2: "Saturated & Surface Dry Basis",
+                    calculation: "A / A-(B – C)",
+                    key: "Saturated & Surface Dry Basis"
+                },
+                {
+                    mass: "Vessel + Water",
+                    col1: "[C]",
+                    col2: "Apparent Density",
+                    calculation: "D / (D – (B – C))",
+                    key: "Apparent Density"
+                },
+                {
+                    mass: "Aggregate (Oven Dried)",
+                    col1: "[D]",
+                    col2: "Water Absorption %",
+                    calculation: "100*(A – D)/D",
+                    key: "Water Absorption %"
+                }
+            ];
+
+            // Add rows to table
+            rows.forEach(row => {
+                const det1Val = det1[row.key];
+                const det2Val = det2[row.key];
+                const meanVal = meanResult(det1Val, det2Val);
+                const range = det2Limits[row.key];
+                const isDet1InRange = isInRange(det1Val, range);
+                const isDet2InRange = isInRange(det2Val, range);
+
+                tableHTML += `
+                    <tr>
+                        <td>${row.mass}</td>
+                        <td>${row.col1}</td>
+                        <td class="result-cell">${inputs[row.col1.replace('[', '').replace(']', '')] || ''}</td>
+                        <td></td>
+                        <td>${row.col2}</td>
+                        <td>${row.calculation}</td>
+                        <td class="result-cell ${isDet1InRange ? 'in-range' : 'out-of-range'}">
+                            ${!isNaN(det1Val) ? det1Val.toFixed(3) : 'N/A'}
+                        </td>
+                        <td class="result-cell ${isDet2InRange ? 'in-range' : 'out-of-range'}">
+                            ${!isNaN(det2Val) ? det2Val.toFixed(3) : 'N/A'}
+                        </td>
+                        <td class="result-cell">${meanVal}</td>
+                        <td>${range[0]} – ${range[1]}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `</tbody></table>`;
+            document.getElementById('resultsTable').innerHTML = tableHTML;
+
+            // Update chart
+            updateChart(det1, det2);
+        }
+
+        // Update the results chart
+        function updateChart(det1, det2) {
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            
+            // Destroy previous chart if exists
+            if (currentChart) {
+                currentChart.destroy();
+            }
+
+            const labels = Object.keys(det1);
+            const ranges = labels.map(label => det2Limits[label]);
+
+            currentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'DET 1 (Your Results)',
+                            data: Object.values(det1),
+                            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'DET 2 (Control Values)',
+                            data: Object.values(det2),
+                            backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Values'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Aggregate Test Results Comparison',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: function(context) {
+                                    const index = context.dataIndex;
+                                    const range = ranges[index];
+                                    return `Acceptable Range: ${range[0]} - ${range[1]}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Reset to default values
+        function resetToDefaults() {
+            document.getElementById('A').value = defaultInputs.A;
+            document.getElementById('B').value = defaultInputs.B;
+            document.getElementById('C').value = defaultInputs.C;
+            document.getElementById('D').value = defaultInputs.D;
+            
+            // Clear custom DET 2 inputs
+            document.getElementById('det2Oven').value = '';
+            document.getElementById('det2Saturated').value = '';
+            document.getElementById('det2Apparent').value = '';
+            document.getElementById('det2Water').value = '';
+            
+            calculateAndGenerate();
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            calculateAndGenerate();
+        });
+    </script>
+</body>
+</html>
