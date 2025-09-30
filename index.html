@@ -72,10 +72,6 @@
             font-size: 1.5rem;
         }
 
-        .input-section {
-            margin-bottom: 2rem;
-        }
-
         .input-group {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -106,19 +102,6 @@
         .input-field input:focus {
             outline: none;
             border-color: #3498db;
-        }
-
-        .det-inputs {
-            background: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 10px;
-            margin-top: 1rem;
-        }
-
-        .det-input-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
         }
 
         .button-group {
@@ -242,15 +225,15 @@
                 <div class="instructions">
                     <h3>How to Use:</h3>
                     <ul>
-                        <li>Enter your mass values in the input fields</li>
-                        <li>Enter custom DET 2 values (or leave for random generation)</li>
+                        <li>Enter your mass values in DET 1 input fields</li>
                         <li>Click "Calculate & Generate" to compute results</li>
+                        <li>DET 2 values are randomly generated within acceptable ranges</li>
                         <li>View results in the table and graph below</li>
                     </ul>
                 </div>
 
                 <div class="input-section">
-                    <h3>Mass Values</h3>
+                    <h3>DET 1 Mass Values (Your Input)</h3>
                     <div class="input-group">
                         <div class="input-field">
                             <label for="A">Aggregate (Air Dried) [A] (g)</label>
@@ -267,30 +250,6 @@
                         <div class="input-field">
                             <label for="D">Aggregate (Oven Dried) [D] (g)</label>
                             <input type="number" id="D" step="0.1" value="541.6">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="input-section">
-                    <h3>Custom DET 2 Values (Optional)</h3>
-                    <div class="det-inputs">
-                        <div class="det-input-group">
-                            <div class="input-field">
-                                <label for="det2Oven">Oven Dried Basis</label>
-                                <input type="number" id="det2Oven" step="0.001" placeholder="Leave empty for random">
-                            </div>
-                            <div class="input-field">
-                                <label for="det2Saturated">Saturated & Surface Dry Basis</label>
-                                <input type="number" id="det2Saturated" step="0.001" placeholder="Leave empty for random">
-                            </div>
-                            <div class="input-field">
-                                <label for="det2Apparent">Apparent Density</label>
-                                <input type="number" id="det2Apparent" step="0.001" placeholder="Leave empty for random">
-                            </div>
-                            <div class="input-field">
-                                <label for="det2Water">Water Absorption %</label>
-                                <input type="number" id="det2Water" step="0.001" placeholder="Leave empty for random">
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -316,7 +275,7 @@
                         <li>✅ <span style="color: #27ae60;">Green</span>: Within acceptable range</li>
                         <li>❌ <span style="color: #e74c3c;">Red</span>: Outside acceptable range</li>
                         <li>DET 1: Your calculated values</li>
-                        <li>DET 2: Custom or randomly generated control values</li>
+                        <li>DET 2: Randomly generated control values</li>
                     </ul>
                 </div>
             </div>
@@ -339,8 +298,8 @@
             D: 541.6
         };
 
-        // Acceptable ranges for each calculation type - UPDATED Water Absorption range
-        const det2Limits = {
+        // Acceptable ranges for final results
+        const resultRanges = {
             "Oven Dried Basis": [2.55, 2.75],
             "Saturated & Surface Dry Basis": [2.55, 2.75],
             "Apparent Density": [2.6, 2.9],
@@ -350,11 +309,43 @@
         let currentChart = null;
 
         // Generate random number within range
-        function getRandomInRange(min, max, decimals = 3) {
+        function getRandomInRange(min, max, decimals = 1) {
             return +(Math.random() * (max - min) + min).toFixed(decimals);
         }
 
-        // Calculate DET 1 results
+        // Generate DET 2 mass values that will produce results within acceptable ranges
+        function generateDet2Masses(det1) {
+            const A1 = det1.A;
+            const B1 = det1.B;
+            const C1 = det1.C;
+            const D1 = det1.D;
+            
+            // Generate DET 2 Aggregate (Air Dried) between 500-700
+            const A2 = getRandomInRange(500, 700);
+            
+            // Keep Vessel + Water the same as DET 1
+            const C2 = C1;
+            
+            // Generate B2 that will produce Oven Dried Basis between 2.55-2.75
+            // Using the formula: OvenDriedBasis = D2 / (A2 - (B2 - C2))
+            // We want this between 2.55-2.75
+            const targetOvenDried = getRandomInRange(2.55, 2.75);
+            const B2 = A2 - (A2 / targetOvenDried) + C2;
+            
+            // Generate D2 that will produce Water Absorption between 1.9-2.3
+            // Using formula: WaterAbsorption = 100 * (A2 - D2) / D2
+            const targetWaterAbsorption = getRandomInRange(1.9, 2.3);
+            const D2 = (A2 * 100) / (100 + targetWaterAbsorption);
+
+            return {
+                A: A2,
+                B: +B2.toFixed(1),
+                C: C2,
+                D: +D2.toFixed(1)
+            };
+        }
+
+        // Calculate results from mass values
         function calculateResults(inputs) {
             const { A, B, C, D } = inputs;
             
@@ -371,22 +362,6 @@
             };
         }
 
-        // Generate DET 2 results (custom or random)
-        function generateDet2Results() {
-            // Get custom DET 2 values from inputs
-            const customOven = document.getElementById('det2Oven').value;
-            const customSaturated = document.getElementById('det2Saturated').value;
-            const customApparent = document.getElementById('det2Apparent').value;
-            const customWater = document.getElementById('det2Water').value;
-
-            return {
-                "Oven Dried Basis": customOven ? parseFloat(customOven) : getRandomInRange(...det2Limits["Oven Dried Basis"]),
-                "Saturated & Surface Dry Basis": customSaturated ? parseFloat(customSaturated) : getRandomInRange(...det2Limits["Saturated & Surface Dry Basis"]),
-                "Apparent Density": customApparent ? parseFloat(customApparent) : getRandomInRange(...det2Limits["Apparent Density"]),
-                "Water Absorption %": customWater ? parseFloat(customWater) : getRandomInRange(...det2Limits["Water Absorption %"])
-            };
-        }
-
         // Calculate mean of two values
         function meanResult(val1, val2) {
             if (isNaN(val1) || isNaN(val2)) return "";
@@ -400,17 +375,20 @@
 
         // Main calculation function
         function calculateAndGenerate() {
-            // Get current input values
-            const inputs = {
+            // Get current DET 1 input values
+            const det1Inputs = {
                 A: parseFloat(document.getElementById('A').value) || 0,
                 B: parseFloat(document.getElementById('B').value) || 0,
                 C: parseFloat(document.getElementById('C').value) || 0,
                 D: parseFloat(document.getElementById('D').value) || 0
             };
 
-            // Calculate results
-            const det1 = calculateResults(inputs);
-            const det2 = generateDet2Results();
+            // Generate DET 2 mass values
+            const det2Inputs = generateDet2Masses(det1Inputs);
+
+            // Calculate results for both DET 1 and DET 2
+            const det1Results = calculateResults(det1Inputs);
+            const det2Results = calculateResults(det2Inputs);
 
             // Generate table HTML
             let tableHTML = `
@@ -466,19 +444,24 @@
 
             // Add rows to table
             rows.forEach(row => {
-                const det1Val = det1[row.key];
-                const det2Val = det2[row.key];
+                const det1Val = det1Results[row.key];
+                const det2Val = det2Results[row.key];
                 const meanVal = meanResult(det1Val, det2Val);
-                const range = det2Limits[row.key];
+                const range = resultRanges[row.key];
                 const isDet1InRange = isInRange(det1Val, range);
                 const isDet2InRange = isInRange(det2Val, range);
+
+                // Get the mass values for display
+                const massKey = row.col1.replace('[', '').replace(']', '');
+                const det1Mass = det1Inputs[massKey];
+                const det2Mass = det2Inputs[massKey];
 
                 tableHTML += `
                     <tr>
                         <td>${row.mass}</td>
                         <td>${row.col1}</td>
-                        <td class="result-cell">${inputs[row.col1.replace('[', '').replace(']', '')] || ''}</td>
-                        <td></td>
+                        <td class="result-cell">${det1Mass}</td>
+                        <td class="result-cell">${massKey === 'C' ? det1Mass : det2Mass}</td>
                         <td>${row.col2}</td>
                         <td>${row.calculation}</td>
                         <td class="result-cell ${isDet1InRange ? 'in-range' : 'out-of-range'}">
@@ -497,7 +480,7 @@
             document.getElementById('resultsTable').innerHTML = tableHTML;
 
             // Update chart
-            updateChart(det1, det2);
+            updateChart(det1Results, det2Results);
         }
 
         // Update the results chart
@@ -510,7 +493,7 @@
             }
 
             const labels = Object.keys(det1);
-            const ranges = labels.map(label => det2Limits[label]);
+            const ranges = labels.map(label => resultRanges[label]);
 
             currentChart = new Chart(ctx, {
                 type: 'bar',
@@ -573,13 +556,6 @@
             document.getElementById('B').value = defaultInputs.B;
             document.getElementById('C').value = defaultInputs.C;
             document.getElementById('D').value = defaultInputs.D;
-            
-            // Clear custom DET 2 inputs
-            document.getElementById('det2Oven').value = '';
-            document.getElementById('det2Saturated').value = '';
-            document.getElementById('det2Apparent').value = '';
-            document.getElementById('det2Water').value = '';
-            
             calculateAndGenerate();
         }
 
